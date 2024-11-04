@@ -1,0 +1,403 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Tic Tac Toe</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <!-- <digalog id="waiting-oponent">
+
+  </digalog> -->
+  <dialog id="win-modal">
+    <p>¡Ha ganado <span id="winner"></span>!</p>
+    <form method="dialog">
+      <button>Jugar de nuevo</button>
+    </form>
+  </dialog>
+  <div id="main">
+    <h1>Super Tic Tac Toe</h1>
+    <div id="game">
+      <div id="time">
+        Tiempo
+      </div>
+      <table id="table-game">
+
+        <tbody>
+
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+      <div id="turn-container">
+        <span id="turn">Esperando al oponente...</span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const gameId = window.location.pathname.split('/').pop()
+    const ws = new WebSocket(`ws://localhost:3000/${gameId}`)
+
+    const $ = (selector) => document.querySelector(selector)
+    const $$ = (selector) => document.querySelectorAll(selector)
+
+    let isMyTurn = false
+    let validTable = null
+    let playerSymbol = null
+    let currentPlayer = null
+
+    const X = "×"
+    const O = "o"
+
+    const winModal = $('#win-modal')
+    const table = $('#table-game')
+    const cells = $$('#table-game td')
+    const turnContainer = $('#turn')
+    const winnerSpan = $('#winner')
+
+    // const timeContainer = $('#time')
+    const matrix = [
+      [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+      ],
+      [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+      ],
+      [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+      ],
+      [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+      ],
+      [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+      ],
+      [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+      ],
+      [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+      ],
+      [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+      ],
+      [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+      ]
+    ]
+    const subTables = new Array(9).fill(null).map(() => [])
+
+    const winnedSubTables = new Array(9).fill(null)
+
+    cells.forEach((cell, index) => {
+      const subTable = Math.floor(index / 27) * 3 + Math.floor((index % 9) / 3)
+      subTables[subTable].push(cell)
+
+      cell.addEventListener('click', () => {
+        if (!isMyTurn) return
+
+        const {
+          row,
+          col,
+          subRow,
+          subCol,
+          subTable
+        } = getMoveInfo(index)
+
+        if (validTable !== null && validTable !== subTable) return
+        if (winnedSubTables[subTable]) return
+        if (matrix[subTable][subRow][subCol] !== '') return
+
+        matrix[subTable][subRow][subCol] = playerSymbol
+        cell.textContent = playerSymbol
+        isMyTurn = false
+
+        ws.send(JSON.stringify({
+          type: 'move',
+          index,
+          symbol: playerSymbol
+        }))
+
+        updateStatus("Esperando al oponente...")
+
+        cells.forEach((cell) => {
+          cell.style.backgroundColor = 'rgb(225, 219, 171)'
+        })
+
+        if (comprobateWinTable(matrix[subTable].flat())) {
+          subTables[subTable][4].classList.add("win", `${playerSymbol === X ? "x" : "o"}`)
+          winnedSubTables[subTable] = playerSymbol ? X : O
+
+          if (comprobateWinTable(winnedSubTables)) {
+            winnerSpan.textContent = playerSymbol
+            winModal.showModal()
+            return validTable = -1
+          }
+        }
+      })
+    })
+
+    const ticTacToeWinTable = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6]
+    ]
+
+    winModal.addEventListener('close', () => {
+      cells.forEach((cell) => {
+        cell.textContent = ''
+        cell.classList.remove('win', 'x', 'o')
+        cell.style.backgroundColor = 'rgb(244, 239, 202)'
+      })
+
+      matrix.forEach((subTable) => {
+        subTable.forEach((row) => {
+          row.fill('')
+        })
+      })
+
+      winnedSubTables.fill(null)
+      turnContainer.textContent = X
+      isMyTurn = playerSymbol === X
+      validTable = null
+    })
+
+    function comprobateWinTable(matrix) {
+      for (let i = 0; i < ticTacToeWinTable.length; i++) {
+        const [a, b, c] = ticTacToeWinTable[i]
+        if (matrix[a] && matrix[a] === matrix[b] && matrix[a] === matrix[c]) {
+          return true
+        }
+      }
+
+      return false
+    }
+
+    function getMoveInfo(index) {
+      const row = Math.floor(index / 9)
+      const col = index % 9
+      const subRow = Math.floor((index % 27) / 9)
+      const subCol = (index % 9) % 3
+      const subTable = Math.floor(index / 27) * 3 + Math.floor((index % 9) / 3)
+
+      return {
+        row,
+        col,
+        subRow,
+        subCol,
+        subTable,
+      }
+    }
+
+    function updateStatus(message) {
+      turnContainer.textContent = message;
+    }
+
+    ws.onmessage = async (event) => {
+      let data
+
+      if (event.data instanceof Blob) {
+        data = await event.data.text()
+      } else {
+        data = event.data
+      }
+      const parsedData = JSON.parse(data)
+
+      switch (parsedData.type) {
+        case 'player':
+
+          playerSymbol = parsedData.player === 1 ? X : O
+          isMyTurn = playerSymbol === X
+
+          if (!isMyTurn) {
+            cells.forEach((cell) => {
+              cell.style.backgroundColor = 'rgb(225, 219, 171)'
+            })
+          }
+
+          updateStatus(isMyTurn ? "Es tu turno" : "Esperando al oponente...")
+          break
+
+        case 'move':
+          const {
+            row, col, subRow, subCol, subTable
+          } = getMoveInfo(parsedData.index)
+
+          validTable = subRow * 3 + subCol
+          matrix[subTable][subRow][subCol] = parsedData.symbol
+          cells[parsedData.index].textContent = parsedData.symbol
+          currentPlayer = parsedData.symbol === X ? O : X
+          isMyTurn = true
+          
+          if (!subTables[validTable].some((cell) => cell.textContent === '') || winnedSubTables[validTable]) {
+            subTables.forEach((subTableCells, i) => {
+              if (winnedSubTables[i]) return
+
+              subTableCells.forEach((cell) => {
+                cell.style.backgroundColor = 'rgb(244, 239, 202)'
+              })
+
+              validTable = null
+            })
+          } else {
+            subTables[validTable].forEach((cell) => {
+              cell.style.backgroundColor = 'rgb(244, 239, 202)'
+            })
+          }
+
+          if (comprobateWinTable(matrix[subTable].flat())) {
+            subTables[subTable][4].classList.add("win", `${parsedData.symbol === X ? "x" : "o"}`)
+            winnedSubTables[subTable] = playerSymbol
+
+            if (comprobateWinTable(winnedSubTables)) {
+              winnerSpan.textContent = parsedData.symbol
+              winModal.showModal()
+              return validTable = -1
+            }
+          }
+
+          updateStatus(isMyTurn ? "Es tu turno" : "Esperando al oponente...");
+
+
+          break
+
+        case 'error':
+          // Muestra el mensaje de error
+          alert(parsedData.message);
+          break;
+      }
+    };
+
+    ws.onopen = () => {
+      console.log('Conectado al servidor WebSocket')
+    }
+  </script>
+</body>
+
+</html>

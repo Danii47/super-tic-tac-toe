@@ -1,0 +1,327 @@
+<!DOCTYPE html>
+<html lang="en">
+
+<head>
+  <meta charset="UTF-8">
+  <meta name="viewport" content="width=device-width, initial-scale=1.0">
+  <title>Super Tic Tac Toe</title>
+
+  <link rel="stylesheet" href="style.css">
+</head>
+
+<body>
+  <dialog id="win-modal">
+    <p>¡Ha ganado x!</p>
+    <form method="dialog">
+      <button>Jugar de nuevo</button>
+    </form>
+  </dialog>
+  <div id="main">
+    <h1>Super Tic Tac Toe</h1>
+    <div id="game">
+      <div id="time">
+        Tiempo
+      </div>
+      <table id="table-game">
+
+        <tbody>
+
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+          <tr>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+            <td></td>
+          </tr>
+        </tbody>
+      </table>
+      <div id="turn-container">
+        Turno: <span id="turn"></span>
+      </div>
+    </div>
+
+  </div>
+
+  <script>
+    const $ = (selector) => document.querySelector(selector)
+    const $$ = (selector) => document.querySelectorAll(selector)
+
+    // true = X, false = O
+    let turn = true
+    let validTable = null
+
+    const X = "×"
+    const O = "o"
+
+    const winModal = $('#win-modal')
+
+    const table = $('#table-game')
+    const cells = $$('#table-game td')
+
+    const turnContainer = $('#turn')
+    turnContainer.textContent = X
+
+    const timeContainer = $('#time')
+    const matrix = [
+      [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+      ],
+      [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+      ],
+      [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+      ],
+      [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+      ],
+      [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+      ],
+      [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+      ],
+      [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+      ],
+      [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+      ],
+      [
+        ['', '', ''],
+        ['', '', ''],
+        ['', '', ''],
+      ]
+    ]
+    const subTables = [
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      [],
+      []
+    ]
+
+    const winnedSubTables = [
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null,
+      null
+    ]
+
+    cells.forEach((cell, index) => {
+      const subTable = Math.floor(index / 27) * 3 + Math.floor((index % 9) / 3)
+      subTables[subTable].push(cell)
+
+      cell.addEventListener('click', () => {
+        const row = Math.floor(index / 9)
+        const col = index % 9
+        const subRow = Math.floor((index % 27) / 9)
+        const subCol = (index % 9) % 3
+        const subTable = Math.floor(index / 27) * 3 + Math.floor((index % 9) / 3)
+
+        if (validTable !== null && validTable !== subTable) return
+        if (winnedSubTables[subTable]) return
+        if (matrix[subTable][subRow][subCol] !== '') return
+
+        matrix[subTable][subRow][subCol] = turn ? X : O
+        cell.textContent = turn ? X : O
+        turnContainer.textContent = !turn ? X : O
+        validTable = subRow * 3 + subCol
+
+        if (comprobateWinTable(matrix[subTable].flat())) {
+          subTables[subTable][4].classList.add("win", `${turn ? "x" : "o"}`)
+          winnedSubTables[subTable] = turn ? X : O
+
+          if (comprobateWinTable(winnedSubTables)) {
+            cells.forEach((cell) => {
+              cell.style.backgroundColor = 'rgb(225, 219, 171)'
+            })
+            winModal.showModal()
+            return validTable = -1
+          }
+        }
+
+        cells.forEach((cell) => {
+          cell.style.backgroundColor = 'rgb(225, 219, 171)'
+        })
+
+        if (subTables[validTable].every((cell) => cell.textContent !== '') || winnedSubTables[validTable]) {
+          validTable = null
+          subTables.forEach((subTableCells, i) => {
+            if (winnedSubTables[i]) return
+
+            subTableCells.forEach((cell) => {
+              cell.style.backgroundColor = 'rgb(244, 239, 202)'
+            })
+          })
+        } else {
+          subTables[validTable].forEach((cell) => {
+            cell.style.backgroundColor = 'rgb(244, 239, 202)'
+          })
+        }
+
+        turn = !turn
+      })
+    })
+    
+    const ticTacToeWinTable = [
+      [0, 1, 2],
+      [3, 4, 5],
+      [6, 7, 8],
+      [0, 3, 6],
+      [1, 4, 7],
+      [2, 5, 8],
+      [0, 4, 8],
+      [2, 4, 6]
+    ]
+
+    winModal.addEventListener('close', () => {
+      cells.forEach((cell) => {
+        cell.textContent = ''
+        cell.classList.remove('win', 'x', 'o')
+        cell.style.backgroundColor = 'rgb(244, 239, 202)'
+      })
+
+      matrix.forEach((subTable) => {
+        subTable.forEach((row) => {
+          row.fill('')
+        })
+      })
+
+      winnedSubTables.fill(null)
+      turn = true
+      turnContainer.textContent = X
+      validTable = null
+    })
+
+    function comprobateWinTable(matrix) {
+      for (let i = 0; i < ticTacToeWinTable.length; i++) {
+        const [a, b, c] = ticTacToeWinTable[i]
+        if (matrix[a] && matrix[a] === matrix[b] && matrix[a] === matrix[c]) {
+          return true
+        }
+      }
+
+      return false
+    }
+  </script>
+</body>
+
+</html>
