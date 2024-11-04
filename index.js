@@ -68,5 +68,5 @@ wss.on('connection', (ws, req) => {
 })
 
 server.listen(PORT, () => {
-  console.log(`Server started on ${SERVER_URL}:${PORT}`)
+  console.log(`Server started on ${SERVER_URL}`)
 })

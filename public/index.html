@@ -139,7 +139,7 @@
 
   <script>
     const gameId = window.location.pathname.split('/').pop()
-    const ws = new WebSocket(`ws://localhost:3000/${gameId}`)
+    const ws = new WebSocket(`ws://${window.location.host}/${gameId}`)
 
     const $ = (selector) => document.querySelector(selector)
     const $$ = (selector) => document.querySelectorAll(selector)
