@@ -3,6 +3,8 @@ const WebSocket = require('ws');
 const http = require('node:http');
 const { randomUUID } = require('node:crypto'); // Instala uuid con npm install uuid
 
+const { PORT, SERVER_URL } = require("./config.js");
+
 const app = express()
 const server = http.createServer(app)
 const wss = new WebSocket.Server({ server })
@@ -65,6 +67,6 @@ wss.on('connection', (ws, req) => {
   }
 })
 
-server.listen(3000, () => {
-  console.log('Server started on http://localhost:3000')
+server.listen(PORT, () => {
+  console.log(`Server started on ${SERVER_URL}:${PORT}`)
 })
